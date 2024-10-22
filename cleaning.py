@@ -51,6 +51,25 @@ def clean_data(df):
     
     return df, avg_list, mode_list
 
+# Maakt een kolom aan voor de totale functiehersteltijd en filtert de data zodat alleen rijen overblijven met een totale functiehersteltijd van tussen de 5 minuten en 8 uur.
+def filter_data(df):
+    # Converteren van strings naar Timestamps.
+    df['stm_fh_ddt'] = pd.to_datetime(df['stm_fh_ddt'], format="%d/%m/%Y %H:%M:%S")
+    df['stm_sap_meld_ddt'] = pd.to_datetime(df['stm_sap_meld_ddt'], format="%d/%m/%Y %H:%M:%S")
+
+    # Kolom aanmaken voor totale funciehersteltijd, dus vanaf melding tot aan functieherstel.
+    df['totale_functiehersteltijd'] = df['stm_fh_ddt'] - df['stm_sap_meld_ddt']
+
+    # Limieten voor filter
+    limiet_laag = pd.Timedelta(minutes=5)
+    limiet_hoog = pd.Timedelta(hours=8)
+
+    # Filter op alleen de rijen met totale_functiehersteltijd tussen de 5 mins en 8 uur.
+    filtered_df = df[(df['totale_functiehersteltijd'] >= limiet_laag) & (df['totale_functiehersteltijd'] <= limiet_hoog)]
+
+    return filtered_df
+
+
 # Function to save cleaned data
 def save_data(df, output_file):
     df.to_csv(output_file, index=False)
