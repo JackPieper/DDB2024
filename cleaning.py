@@ -1,15 +1,20 @@
 import pandas as pd
 import numpy as np
 
+
 # Function to load data
 def load_data(file_path):
     df = pd.read_csv(file_path, low_memory=False)
     return df
 
+
 # Function to drop unnecessary columns
 def drop_columns(df, columns_to_drop):
     df = df.drop(columns=columns_to_drop, errors='ignore')
+    df.dropna(subset=['stm_progfh_in_invoer_dat'], inplace=True)
+    df.reset_index(drop=True, inplace=True)
     return df
+
 
 # Function to clean data (remove columns with too many NaNs and fill missing values)
 def clean_data(df):
@@ -29,12 +34,19 @@ def clean_data(df):
         if non_nan_count < total * 0.8:
             print(f'{i} has been removed (too many missing values)')
             temp.append(i)
+
         else:
+            k = 0
+            while k < df.shape[0]:
+                if not pd.isna(df[i][k]):
+                    break
+                k += 1
             # Cast column data to appropriate type
-            df[i] = df[i].astype(type(df[i][1]), errors='raise')
-            
+            print(f"{df[i][k]} is type {type(df[i][k])}")
+            df[i] = df[i].astype(type(df[i][k]), errors='raise')
+
             # If column is numeric, fill NaN values with the mean
-            if isinstance(df[i][1], (float, np.float64, np.int64)):
+            if isinstance(df[i][k], (float, np.float64, np.int64)):
                 avg = df[i].mean()
                 df[i] = df[i].fillna(avg)
                 avg_list[i] = avg
@@ -50,6 +62,7 @@ def clean_data(df):
     df.drop(temp, axis=1, inplace=True)
     
     return df, avg_list, mode_list
+
 
 # Maakt een kolom aan voor de totale functiehersteltijd en filtert de data zodat alleen rijen overblijven met een totale functiehersteltijd van tussen de 5 minuten en 8 uur.
 def filter_data(df):
