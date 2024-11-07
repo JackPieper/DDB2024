@@ -1,6 +1,7 @@
 import tkinter as tk
 import sklearn
 import joblib
+import numpy as np
 
 
 def processData():
@@ -11,14 +12,25 @@ def processData():
     X[0].append(entry4.get())
     X[0].append(entry5.get())
     pred = model.predict(X)
+    allPreds = np.array(sorted(np.array([tree.predict(X)[0] for tree in model.estimators_])))
+    print(allPreds)
+    leng = 0
+    for i in allPreds:
+        if i < pred:
+            leng += 1
+        else:
+            break
+
+    close = allPreds[np.abs(allPreds - pred).argmin()]
+
+    print(f"Closest: {close}")
 
     outputText = f"Resultaat: {pred[0]:.2f} minuten."
     outputLabel.config(text=outputText)
 
-    segments = [30, 20, 50]
-    colors = ["#1f77b4", "#ff7f0e", "#2ca02c"]
-    canvas = tk.Canvas(root, width=300, height=100)
-    canvas.pack()
+    canvas.delete("all")
+    segments = [leng, len(allPreds) - leng]
+    colors = ["red", "green"]
     left = 10
     for segment, color in zip(segments, colors):
         canvas.create_rectangle(left, 40, left + segment * 3, 70, fill=color)
@@ -64,5 +76,8 @@ rightFrame.pack(side=tk.RIGHT, padx=10, pady=10)
 
 outputLabel = tk.Label(rightFrame, text="", font=("Arial", 12), justify=tk.LEFT)
 outputLabel.pack()
+
+canvas = tk.Canvas(rightFrame, width=300, height=100)
+canvas.pack()
 
 root.mainloop()
