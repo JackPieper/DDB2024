@@ -80,6 +80,15 @@ def preprocess_data(df):
     df['stm_sap_meld_ddt'] = pd.to_datetime(df['stm_sap_meld_ddt'], format="%d/%m/%Y %H:%M:%S", errors='coerce')
     df['totale_functiehersteltijd'] = df['stm_fh_ddt'] - df['stm_sap_meld_ddt']
 
+        # Verwijder spaties aan het begin en einde van de waarden
+    df['stm_progfh_in_duur_clean'] = df['stm_progfh_in_duur'].str.strip()
+
+    # Vervang ongeldige waarden door NaN en converteer naar numeriek
+    df['stm_progfh_in_duur_clean'] = pd.to_numeric(df['stm_progfh_in_duur_clean'], errors='coerce')
+
+    # Vul NaN-waarden in met de gemiddelde waarde (zonder inplace=True)
+    df['stm_progfh_in_duur_clean'] = df['stm_progfh_in_duur_clean'].fillna(df['stm_progfh_in_duur_clean'].mean())
+
     # Filter rows with recovery time between 5 minutes and 8 hours
     limiet_laag = pd.Timedelta(minutes=5)
     limiet_hoog = pd.Timedelta(hours=8)

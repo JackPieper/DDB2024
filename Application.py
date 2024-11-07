@@ -32,37 +32,25 @@ def validate_and_get_input():
         return None
 
 
-def display_prediction(prediction):
+def display_prediction(prediction, closest_value):
     """
-    Display the prediction on the output label.
+    Display the prediction and closest value on the output label.
     """
-    output_text = f"Resultaat: {prediction:.2f} minuten."
+    output_text = f"Resultaat: {prediction:.2f} minuten (Closest: {closest_value:.2f} minuten)."
     outputLabel.config(text=output_text)
 
 
-def draw_interval_boxes(prediction, all_preds):
+def draw_probability_bar(leng, total_preds):
     """
-    Draws boxes in 10-minute intervals on the canvas to represent prediction bins.
+    Draws a bar chart on the canvas representing the probability distribution.
     """
     canvas.delete("all")
-    interval_width = 10  # Width in pixels for each interval box
-    num_intervals = 48  # Number of intervals to cover 0 to 480 minutes (8 hours)
-    bin_colors = ["#d3d3d3"] * num_intervals  # Default color for intervals
-
-    # Calculate the index of the interval closest to the prediction
-    pred_interval_index = int(prediction // 10)
-
-    # Set color for the prediction interval
-    bin_colors[pred_interval_index] = "green"
-
-    # Draw each interval box
+    segments = [leng, total_preds - leng]
+    colors = ["red", "green"]
     left = 10
-    for i in range(num_intervals):
-        color = bin_colors[i]
-        interval_text = f"{i * 10}-{(i + 1) * 10} min"
-        canvas.create_rectangle(left, 40, left + interval_width, 70, fill=color)
-        canvas.create_text(left + interval_width / 2, 25, text=interval_text, font=("Arial", 8))
-        left += interval_width
+    for segment, color in zip(segments, colors):
+        canvas.create_rectangle(left, 40, left + segment * 3, 70, fill=color)
+        left += segment * 3
 
 
 def process_data():
@@ -81,10 +69,14 @@ def process_data():
 
         # Gather predictions from all trees in the ensemble
         all_preds = np.array(sorted(tree.predict(X)[0] for tree in model.estimators_))
-
-        # Display the prediction result and draw interval boxes
-        display_prediction(pred)
-        draw_interval_boxes(pred, all_preds)
+        
+        # Calculate distribution position and closest value
+        leng = np.sum(all_preds < pred)
+        closest_value = all_preds[np.abs(all_preds - pred).argmin()]
+        
+        # Display results and draw probability bar
+        display_prediction(pred, closest_value)
+        draw_probability_bar(leng, len(all_preds))
     
     except Exception as e:
         messagebox.showerror("Prediction Error", f"An error occurred: {e}")
@@ -111,7 +103,7 @@ def set_placeholder(entry, placeholder):
 
 # Initialize the Tkinter root window
 root = tk.Tk()
-root.minsize(500, 250)
+root.minsize(400, 250)
 root.title("Random Forest Prediction")
 
 # Left Frame for inputs
@@ -152,7 +144,7 @@ right_frame.pack(side=tk.RIGHT, padx=10, pady=10)
 outputLabel = tk.Label(right_frame, text="", font=("Arial", 12), justify=tk.LEFT)
 outputLabel.pack()
 
-canvas = tk.Canvas(right_frame, width=500, height=100)
+canvas = tk.Canvas(right_frame, width=300, height=100)
 canvas.pack()
 
 root.mainloop()
